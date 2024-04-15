@@ -1,0 +1,7 @@
+__pycache__
+
+.env
+data/dataset
+logs
+dataset
+src/data/zinc250k.csv
