@@ -1,8 +1,5 @@
-from functools import partial
-
 import pandas as pd
 from torch.utils.data import Dataset
-from torch_geometric.loader import DataLoader
 
 from src.featurizer import SimpleGraph2dFeaturizer, RandomAtomMask
 
@@ -15,7 +12,7 @@ class Zinc250(Dataset):
     def __init__(self):
         super().__init__()
         # self.smiles = pd.read_csv(self.ZINC_PATH)["smiles"].tolist()
-        self.smiles = pd.read_csv(self.ZINC_PATH, header=None)[0].tolist()
+        self.smiles = pd.read_csv(self.ZINC_PATH, header=None)[0]
         # self.featurizer = mol_to_graph_data_obj_simple#SimpleGraph2dFeaturizer()
         self.featurizer = SimpleGraph2dFeaturizer()
         self.masking_strategy = RandomAtomMask(prob=0.25)
@@ -26,6 +23,3 @@ class Zinc250(Dataset):
 
     def __getitem__(self, idx):
         return self.masking_strategy(self.featurizer(self.smiles[idx]))
-
-
-Zinc250_DataLoader = partial(DataLoader, Zinc250())
