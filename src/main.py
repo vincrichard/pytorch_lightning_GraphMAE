@@ -10,6 +10,7 @@ from torch_geometric.loader import DataLoader as GraphDataLoader
 
 from src.data import Zinc250
 from src.models.graph_mae import LitGraphMAE
+from src.models.hgmae import LitHGMAE
 
 from src.utils.aim_callback import (
     AimParamGradientCallback,
@@ -20,7 +21,9 @@ from src.utils.aim_callback import (
 # track experimental data by using Aim
 aim_logger = AimLogger(
     repo="./logs",
-    experiment="GraphMAE",
+    # experiment="GraphMAE",
+    experiment="HGMAE",
+    # experiment="debug",
     train_metric_prefix="train_",
     val_metric_prefix="val_",
 )
@@ -62,7 +65,8 @@ trainer = L.Trainer(
 )
 
 trainer.fit(
-    model=LitGraphMAE(),
+    # model=LitGraphMAE(),
+    model=LitHGMAE(),
     train_dataloaders=train_dataloader,
     # val_dataloaders=,
 )
