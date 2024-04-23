@@ -123,17 +123,3 @@ class GNN(torch.nn.Module):
             h_list.append(h)
 
         return h_list[-1]
-
-
-class GNNDecoder(torch.nn.Module):
-    def __init__(self, hidden_dim, out_dim):
-        super().__init__()
-        self.conv = GINConv(hidden_dim, out_dim, aggr="add")
-        self.enc_to_dec = torch.nn.Linear(hidden_dim, hidden_dim, bias=False)
-        self.activation = torch.nn.PReLU()
-
-    def forward(self, x, edge_index, edge_attr, masked_atom_mask):
-        x = self.activation(x)
-        x = self.enc_to_dec(x)
-        x[masked_atom_mask] = 0
-        return self.conv(x, edge_index, edge_attr)

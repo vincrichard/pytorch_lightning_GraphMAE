@@ -3,7 +3,7 @@ from torch import optim
 from torch_geometric.data import Data
 import lightning as L
 
-from src.models.gnn import GNN, GNNDecoder
+from src.models.gnn import GNN, GINConv
 from src.criterion import sce_loss
 from src.utils.onnx_export import save_model_onnx
 
@@ -14,12 +14,20 @@ class GraphMAE(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.encoder = GNN(num_layer=5, emb_dim=500, drop_ratio=0)
-        self.decoder = GNNDecoder(hidden_dim=500, out_dim=119)
+        self.encoder_to_decoder = torch.nn.Sequential(
+            torch.nn.PReLU(),
+            torch.nn.Linear(in_features=500, out_features=500, bias=False),
+        )
+        self.decoder = GINConv(emb_dim=500, out_dim=119, aggr="add")
 
     def forward(self, x, edge_index, edge_attr, masked_atom_mask):
+
         node_rep = self.encoder(x, edge_index, edge_attr)
-        # masking of the representation is done in the decoder
-        return self.decoder(node_rep, edge_index, edge_attr, masked_atom_mask)
+
+        decoder_input = self.encoder_to_decoder(node_rep)
+        decoder_input[masked_atom_mask] = 0
+
+        return self.decoder(decoder_input, edge_index, edge_attr)
 
 
 # define the LightningModule
@@ -41,9 +49,11 @@ class LitGraphMAE(L.LightningModule):
         masked_atom_mask = batch.masked_atom_mask
 
         node_rep = self.graph_mae.encoder(batch.x, batch.edge_index, batch.edge_attr)
+        decoder_input = self.graph_mae.encoder_to_decoder(node_rep)
+        decoder_input[masked_atom_mask] = 0
         # masking of the representation is done in the decoder
         pred_node = self.graph_mae.decoder(
-            node_rep, batch.edge_index, batch.edge_attr, masked_atom_mask
+            decoder_input, batch.edge_index, batch.edge_attr
         )
 
         loss = self.criterion(batch.node_attr_label, pred_node[masked_atom_mask])
