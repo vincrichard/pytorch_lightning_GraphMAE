@@ -1,59 +1,44 @@
+from datetime import datetime
+
 import lightning as L
 from lightning.pytorch.callbacks import (
     LearningRateMonitor,
     RichProgressBar,
     ModelCheckpoint,
 )
-
-from aim.pytorch_lightning import AimLogger
+from lightning.pytorch.loggers import TensorBoardLogger
 from torch_geometric.loader import DataLoader as GraphDataLoader
 
-from src.data import Zinc250
+from src.data.datasets import Zinc
 from src.models.graph_mae import LitGraphMAE
-from src.models.hgmae import LitHGMAE
 
-from src.utils.aim_callback import (
-    AimParamGradientCallback,
-    AimLayerOutputDisctributionCallback,
-    get_run_folder_aim_logger,
-)
+# from src.models.hgmae import LitHGMAE
 
-# track experimental data by using Aim
-aim_logger = AimLogger(
-    repo="./logs",
-    # experiment="GraphMAE",
-    experiment="HGMAE",
-    # experiment="debug",
-    train_metric_prefix="train_",
-    val_metric_prefix="val_",
-)
 
-logging_directory = get_run_folder_aim_logger(aim_logger)
+logging_dir = f"logs/pretraining/graph_mae/{datetime.now().strftime('%Y-%m-%d_%H-%M')}"
+
 
 # setup data
-dataset = Zinc250()
+dataset = Zinc("dataset/zinc_standard_agent/processed/smiles.csv")
 train_dataloader = GraphDataLoader(
     dataset, persistent_workers=True, shuffle=True, batch_size=256, num_workers=8
 )
 
-model = LitGraphMAE()
-model.to_onnx(next(iter(train_dataloader)), logging_directory)
-
 trainer = L.Trainer(
     accelerator="gpu",
-    devices=[1],
+    devices=[2],
     # limit_train_batches=50,
     max_epochs=100,
-    logger=aim_logger,
+    logger=TensorBoardLogger(f"{logging_dir}/tensorboard", name="graphmae"),
     log_every_n_steps=1,
     # default_root_dir="some/path/",
     # enable_checkpointing=False
     callbacks=[
-        ModelCheckpoint(dirpath=logging_directory, save_top_k=5, monitor="train_loss"),
+        ModelCheckpoint(
+            dirpath=f"{logging_dir}/checkpoints", save_top_k=5, monitor="train_loss"
+        ),
         LearningRateMonitor(logging_interval="step"),
         RichProgressBar(),
-        AimParamGradientCallback(logging_interval=25),
-        AimLayerOutputDisctributionCallback(logging_interval=25),
     ],
     #  Debug
     # fast_dev_run=5 # disable callbacks
@@ -65,8 +50,8 @@ trainer = L.Trainer(
 )
 
 trainer.fit(
-    # model=LitGraphMAE(),
-    model=LitHGMAE(),
+    model=LitGraphMAE(),
+    # model=LitHGMAE(),
     train_dataloaders=train_dataloader,
     # val_dataloaders=,
 )

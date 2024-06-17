@@ -3,7 +3,7 @@ from typing import List, Tuple
 import torch
 from torch_geometric.data import Data as TorchGeometricData
 import numpy as np
-from rdkit import Chem
+from rdkit import Chem, RDLogger
 
 from src.featurizer.dgllife import (
     atom_chiral_tag_one_hot,
@@ -70,6 +70,8 @@ class SimpleGraph2dFeaturizer:
 
             edge_indices.extend([[i, j], [j, i]])
             edge_attributes.extend([bond_features] * 2)
+        if not len(edge_indices):
+            return np.empty(shape=(0, 2)), np.empty(shape=(0, 2))
 
         return np.array(edge_indices), np.array(edge_attributes)
 
@@ -79,7 +81,9 @@ class SimpleGraph2dFeaturizer:
         )
 
     def __call__(self, smiles: str) -> TorchGeometricData:
+        RDLogger.DisableLog("rdApp.*")
         mol = Chem.MolFromSmiles(smiles)
+        RDLogger.EnableLog("rdApp.*")
 
         atom_features = self._get_vertex_features(mol)
         atom_features = torch.LongTensor(atom_features).view(-1, len(atom_features[0]))

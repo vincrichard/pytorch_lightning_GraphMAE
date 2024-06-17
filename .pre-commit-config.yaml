@@ -23,3 +23,4 @@ repos:
     hooks:
     -   id: typos
         exclude: ".ipynb"
+        args: []

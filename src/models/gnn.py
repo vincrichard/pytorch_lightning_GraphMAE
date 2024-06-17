@@ -1,3 +1,10 @@
+"""
+Code use by multiple paper doing preptraining on graph.
+The original implementation comes from: https://github.com/snap-stanford/pretrain-gnns
+
+But it has been used in:
+"""
+
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import MessagePassing
@@ -12,7 +19,7 @@ num_atom_type = (
 num_chirality_tag = 3
 
 num_bond_type = (
-    len(SimpleGraph2dFeaturizer.BOND_TYPES) + 1
+    len(SimpleGraph2dFeaturizer.BOND_TYPES) + 2
 )  # 4 #including aromatic and self-loop edge
 num_bond_direction = len(SimpleGraph2dFeaturizer.BOND_DIR)
 
@@ -52,7 +59,9 @@ class GINConv(MessagePassing):
         # add features corresponding to self-loop edges.
         self_loop_attr = torch.zeros(x.size(0), 2)
         self_loop_attr[:, 0] = 4  # bond type for self-loop edge
-        self_loop_attr = self_loop_attr.to(edge_attr.device).to(edge_attr.dtype)
+        self_loop_attr = self_loop_attr.to(
+            device=edge_attr.device, dtype=edge_attr.dtype
+        )
         edge_attr = torch.cat((edge_attr, self_loop_attr), dim=0)
 
         edge_embeddings = self.edge_embedding1(edge_attr[:, 0]) + self.edge_embedding2(
@@ -74,9 +83,7 @@ class GNN(torch.nn.Module):
     Args:
         num_layer (int): the number of GNN layers
         emb_dim (int): dimensionality of embeddings
-        max_pool_layer (int): the layer from which we use max pool rather than add pool for neighbor aggregation
         drop_ratio (float): dropout rate
-        gnn_type: gin, gcn, graphsage, gat
 
     Output:
         node representations
@@ -107,7 +114,7 @@ class GNN(torch.nn.Module):
         for layer in range(num_layer):
             self.batch_norms.append(torch.nn.BatchNorm1d(emb_dim))
 
-    def forward(self, x, edge_index, edge_attr):
+    def forward(self, x, edge_index: torch.Tensor, edge_attr: torch.Tensor):
         x = self.x_embedding1(x[:, 0]) + self.x_embedding2(x[:, 1])
 
         h_list = [x]
@@ -116,9 +123,9 @@ class GNN(torch.nn.Module):
             h = self.batch_norms[layer](h)
             # h = F.dropout(F.relu(h), self.drop_ratio, training = self.training)
             if layer < self.num_layer - 1:
-                # remove relu for the last layer
                 h = F.dropout(F.relu(h), self.drop_ratio, training=self.training)
             else:
+                # remove relu for the last layer
                 h = F.dropout(h, self.drop_ratio, training=self.training)
             h_list.append(h)
 
