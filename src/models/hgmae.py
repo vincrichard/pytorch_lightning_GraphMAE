@@ -87,11 +87,13 @@ class LitHGMAE(L.LightningModule):
         )
 
         # predicting node feat
-        node_rep = self.hgmae.encoder(batch.x, batch.edge_index, batch.edge_attr)
+        node_rep = self.hgmae.encoder(
+            mask_data.x, mask_data.edge_index, mask_data.edge_attr
+        )
         decoder_edge_input = self.hgmae.edge_encoder_to_decoder(node_rep)
 
         edge_prediction = self.hgmae.decoder(
-            decoder_edge_input, batch.edge_index, batch.edge_attr
+            decoder_edge_input, mask_data.edge_index, mask_data.edge_attr
         )
         edge_prediction = torch.mm(edge_prediction, edge_prediction.T)
 

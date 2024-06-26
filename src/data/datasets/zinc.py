@@ -5,8 +5,6 @@ from src.featurizer import SimpleGraph2dFeaturizer, RandomAtomMask
 
 
 class Zinc(Dataset):
-    BASE_PATH = "/nasa/shared_homes/vincent/sandbox/GraphMAE/"
-    ZINC_PATH = f"{BASE_PATH}dataset/zinc_standard_agent/processed/smiles.csv"
 
     def __init__(self, path):
         super().__init__()

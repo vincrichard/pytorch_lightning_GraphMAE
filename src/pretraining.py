@@ -12,14 +12,12 @@ from torch_geometric.loader import DataLoader as GraphDataLoader
 from src.data.datasets import Zinc
 from src.models.graph_mae import LitGraphMAE
 
-# from src.models.hgmae import LitHGMAE
-
 
 logging_dir = f"logs/pretraining/graph_mae/{datetime.now().strftime('%Y-%m-%d_%H-%M')}"
 
 
 # setup data
-dataset = Zinc("dataset/zinc_standard_agent/processed/smiles.csv")
+dataset = Zinc("data/datasets/zinc.csv")
 train_dataloader = GraphDataLoader(
     dataset, persistent_workers=True, shuffle=True, batch_size=256, num_workers=8
 )
@@ -51,7 +49,6 @@ trainer = L.Trainer(
 
 trainer.fit(
     model=LitGraphMAE(),
-    # model=LitHGMAE(),
     train_dataloaders=train_dataloader,
     # val_dataloaders=,
 )

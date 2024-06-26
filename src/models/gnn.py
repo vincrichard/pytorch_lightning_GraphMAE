@@ -20,7 +20,7 @@ num_chirality_tag = 3
 
 num_bond_type = (
     len(SimpleGraph2dFeaturizer.BOND_TYPES) + 2
-)  # 4 #including aromatic and self-loop edge
+)  # 6 #including aromatic and self-loop edge
 num_bond_direction = len(SimpleGraph2dFeaturizer.BOND_DIR)
 
 

@@ -29,7 +29,7 @@ def train_and_predict_with_seed(logging_dir: str, checkpoint_encoder: Path, seed
     l_logger = TensorBoardLogger(f"{logging_dir}/tensorboard", name="graph_mae")
 
     # setup data
-    dataset = Tox21("dataset/tox21/raw/tox21.csv")
+    dataset = Tox21("data/datasets/tox21.csv")
     train_dataset, valid_dataset, test_dataset = scaffold_split(dataset, dataset.smiles)
     train_dataloader = GraphDataLoader(
         train_dataset, shuffle=True, batch_size=32, num_workers=8
